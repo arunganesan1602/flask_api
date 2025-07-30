@@ -1,6 +1,18 @@
 services:
   - type: web
-    name: flask-api
+    name: voice-backend-api
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python flask_api.py
+    envVars:
+      - key: SF_USERNAME
+        value: your_salesforce_username@example.com
+      - key: SF_PASSWORD
+        value: your_salesforce_password
+      - key: SF_TOKEN
+        value: your_salesforce_security_token
+      - key: LIVEKIT_API_KEY
+        value: your_livekit_api_key
+      - key: LIVEKIT_API_SECRET
+        value: your_livekit_api_secret
