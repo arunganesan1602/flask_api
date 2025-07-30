@@ -1,44 +1,36 @@
 from flask import Flask, request, jsonify
+import requests
 from simple_salesforce import Salesforce
-import google.generativeai as genai
-import os
+import openai
+from livekit import send_audio_response  # Your own LiveKit function
 
 app = Flask(__name__)
 
-# Config for Gemini
-genai.configure(api_key=os.environ.get("AIzaSyDDTVLv2nJv7ZSl1zR53yy9pr8GaMaS0fU"))
-
-# Salesforce credentials (use Render's environment variables)
+# Salesforce credentials
 sf = Salesforce(
-    username=os.environ.get('arun.ganesan1602835@agentforce.com'),
-    password=os.environ.get('Demand@1234567'),
-    security_token=os.environ.get('SF_TOKEN')
+    username='YOUR_USERNAME',
+    password='YOUR_PASSWORD',
+    security_token='YOUR_SECURITY_TOKEN',
+    domain='login'
 )
 
-@app.route("/process", methods=["POST"])
-def process_transcript():
-    transcript = request.json.get("transcript", "")
+@app.route('/voice', methods=['POST'])
+def voice_handler():
+    # 1. Get transcripted voice (simulate)
+    query = "What is the stage of Opportunity Oppo1?"
 
-    # Gemini: Extract Opportunity Name
-    model = genai.GenerativeModel("gemini-pro")
-    prompt = f"Extract only the Opportunity name from this question: '{transcript}'"
-    response = model.generate_content(prompt)
-    opp_name = response.text.strip().replace("'", "")
+    # 2. Use Gemini/OpenAI to extract intent
+    # Simulate using simple parsing
+    if "opportunity" in query.lower():
+        name = query.split("Opportunity ")[1].replace("?", "").strip()
 
-    # Salesforce: Query Opportunity Stage
-    try:
-        result = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{opp_name}' LIMIT 1")
-        if not result['records']:
-            return jsonify({"reply": f"No opportunity found with name '{opp_name}'"})
+        # 3. Query Salesforce
+        opp = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{name}'")
+        stage = opp['records'][0]['StageName'] if opp['records'] else 'Not Found'
 
-        stage = result['records'][0]['StageName']
-        return jsonify({"reply": f"The stage of Opportunity '{opp_name}' is {stage}."})
-    except Exception as e:
-        return jsonify({"error": str(e)})
+        # 4. Send voice back via LiveKit
+        send_audio_response(f"The stage of opportunity {name} is {stage}")
 
-@app.route("/", methods=["GET"])
-def home():
-    return "LiveKit + Gemini + Salesforce API is running."
+        return jsonify({'stage': stage})
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    return jsonify({'error': 'Invalid query'})
