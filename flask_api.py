@@ -6,12 +6,12 @@ import os
 app = Flask(__name__)
 
 # Config for Gemini
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+genai.configure(api_key=os.environ.get("AIzaSyDDTVLv2nJv7ZSl1zR53yy9pr8GaMaS0fU"))
 
 # Salesforce credentials (use Render's environment variables)
 sf = Salesforce(
-    username=os.environ.get('SF_USERNAME'),
-    password=os.environ.get('SF_PASSWORD'),
+    username=os.environ.get('arun.ganesan1602835@agentforce.com'),
+    password=os.environ.get('Demand@1234567'),
     security_token=os.environ.get('SF_TOKEN')
 )
 
