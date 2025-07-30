@@ -1,36 +1,31 @@
 from flask import Flask, request, jsonify
-import requests
+import os
 from simple_salesforce import Salesforce
-import openai
-from livekit import send_audio_response  # Your own LiveKit function
+from livekit_utils import send_audio_response
 
 app = Flask(__name__)
 
-# Salesforce credentials
+# Salesforce credentials from Render environment variables
 sf = Salesforce(
-    username='YOUR_USERNAME',
-    password='YOUR_PASSWORD',
-    security_token='YOUR_SECURITY_TOKEN',
+    username=os.getenv('SF_USERNAME'),
+    password=os.getenv('SF_PASSWORD'),
+    security_token=os.getenv('SF_TOKEN'),
     domain='login'
 )
 
 @app.route('/voice', methods=['POST'])
 def voice_handler():
-    # 1. Get transcripted voice (simulate)
+    # Simulated voice query (replace with actual transcript later)
     query = "What is the stage of Opportunity Oppo1?"
 
-    # 2. Use Gemini/OpenAI to extract intent
-    # Simulate using simple parsing
     if "opportunity" in query.lower():
-        name = query.split("Opportunity ")[1].replace("?", "").strip()
+        try:
+            name = query.split("Opportunity ")[1].replace("?", "").strip()
+            opp = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{name}'")
+            stage = opp['records'][0]['StageName'] if opp['records'] else 'Not Found'
 
-        # 3. Query Salesforce
-        opp = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{name}'")
-        stage = opp['records'][0]['StageName'] if opp['records'] else 'Not Found'
-
-        # 4. Send voice back via LiveKit
-        send_audio_response(f"The stage of opportunity {name} is {stage}")
-
-        return jsonify({'stage': stage})
-
+            send_audio_response(f"The stage of opportunity {name} is {stage}")
+            return jsonify({'stage': stage})
+        except Exception as e:
+            return jsonify({'error': str(e)})
     return jsonify({'error': 'Invalid query'})
