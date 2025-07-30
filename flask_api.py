@@ -3,14 +3,19 @@ import os
 from simple_salesforce import Salesforce
 from livekit_utils import send_audio_response
 import re
+from dotenv import load_dotenv
+
+# Load environment variables (only needed locally, ignored in Render)
+load_dotenv()
 
 app = Flask(__name__)
 
+# Salesforce connection
 sf = Salesforce(
     username=os.getenv('SF_USERNAME'),
     password=os.getenv('SF_PASSWORD'),
     security_token=os.getenv('SF_SECURITY_TOKEN'),
-    domain=os.environ.get('SF_DOMAIN', 'login')  # 'login' for production, 'test' for sandbox
+    domain=os.getenv('SF_DOMAIN') or 'login'
 )
 
 @app.route('/voice', methods=['POST'])
@@ -20,17 +25,14 @@ def voice_handler():
 
     if "opportunity" in query.lower():
         try:
-            # Extract Opportunity Name using regex
-            match = re.search(r"opportunity\s+(?:named|called)?\s*([A-Za-z0-9_\-\' ]+)", query, re.IGNORECASE)
+            # Extract Opportunity Name
+            match = re.search(r"Opportunity\s+([A-Za-z0-9_\- ]+)", query, re.IGNORECASE)
             name = match.group(1).strip() if match else None
 
             if not name:
                 return jsonify({'error': 'Opportunity name not found in query'}), 400
 
-            # Escape single quotes for SOQL safety
-            safe_name = name.replace("'", "\\'")
-            opp = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{safe_name}'")
-
+            opp = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{name}'")
             if opp['records']:
                 stage = opp['records'][0]['StageName']
                 send_audio_response(f"The stage of opportunity {name} is {stage}")
@@ -39,4 +41,10 @@ def voice_handler():
                 return jsonify({'error': 'Opportunity not found'}), 404
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
     return jsonify({'error': 'Invalid query'}), 400
+
+
+# Required to run the app on Render
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
