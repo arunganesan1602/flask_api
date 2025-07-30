@@ -1,20 +1,25 @@
 services:
   - type: web
-    name: voice-backend-api
-    env: python
+    name: voice_model
+    runtime: python
+    region: oregon  # You can change to closest region if needed
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python flask_api.py
+    startCommand: python app.py
     envVars:
-      - key: SF_USERNAME
-        value: your_salesforce_username@example.com
-      - key: SF_PASSWORD
-        value: your_salesforce_password
-      - key: SF_SECURITY_TOKEN   # ✅ Corrected key
-        value: your_salesforce_security_token
-      - key: SF_DOMAIN           # ✅ Added this
-        value: login             # or "test" for sandbox
+      - key: GEMINI_API_KEY
+        sync: false
       - key: LIVEKIT_API_KEY
-        value: your_livekit_api_key
+        sync: false
       - key: LIVEKIT_API_SECRET
-        value: your_livekit_api_secret
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: SF_DOMAIN
+        sync: false
+      - key: SF_USERNAME
+        sync: false
+      - key: SF_PASSWORD
+        sync: false
+      - key: SF_SECURITY_TOKEN
+        sync: false
