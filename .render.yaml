@@ -2,10 +2,10 @@ services:
   - type: web
     name: voice_model
     runtime: python
-    region: oregon  # You can change to closest region if needed
+    region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: python flask_api.py
     envVars:
       - key: GEMINI_API_KEY
         sync: false
