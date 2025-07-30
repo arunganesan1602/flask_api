@@ -1,4 +1,6 @@
-Flask
-simple-salesforce
 openai
-PyJWT
+Flask==2.3.3
+simple-salesforce==1.12.4
+PyJWT==2.8.0
+requests==2.31.0
+python-dotenv==1.0.1
