@@ -10,8 +10,10 @@ services:
         value: your_salesforce_username@example.com
       - key: SF_PASSWORD
         value: your_salesforce_password
-      - key: SF_TOKEN
+      - key: SF_SECURITY_TOKEN   # ✅ Corrected key
         value: your_salesforce_security_token
+      - key: SF_DOMAIN           # ✅ Added this
+        value: login             # or "test" for sandbox
       - key: LIVEKIT_API_KEY
         value: your_livekit_api_key
       - key: LIVEKIT_API_SECRET
