@@ -1,6 +1,7 @@
-Flask==2.3.3
-simple-salesforce==1.12.4
-gTTS==2.5.1
-python-dotenv==1.0.1
-PyJWT==2.8.0
+Flask==2.3.2
+simple-salesforce
+gTTS
+python-dotenv
+flask-cors
+PyJWT
 requests==2.31.0
