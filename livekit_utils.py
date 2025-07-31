@@ -1,18 +1,19 @@
 import os
-import jwt  # PyJWT library
+from gtts import gTTS
 
-LIVEKIT_API_KEY = os.getenv('LIVEKIT_API_KEY')
-LIVEKIT_API_SECRET = os.getenv('LIVEKIT_API_SECRET')
+AUDIO_DIR = os.path.join("static", "audio")
+AUDIO_FILENAME = "last_response.mp3"
 
-def generate_livekit_token(identity, room_name):
-    payload = {
-        "iss": LIVEKIT_API_KEY,
-        "sub": "voice-assistant",
-        "aud": "livekit",
-        "exp": int(time.time()) + 3600,
-        "room": room_name,
-        "identity": identity
-    }
+def send_audio_response(text):
+    """
+    Converts the given text to speech using gTTS and saves it as an MP3 file
+    """
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    file_path = os.path.join(AUDIO_DIR, AUDIO_FILENAME)
 
-    token = jwt.encode(payload, LIVEKIT_API_SECRET, algorithm='HS256')
-    return token
+    try:
+        tts = gTTS(text=text)
+        tts.save(file_path)
+        print(f"[✅] Audio response saved to: {file_path}")
+    except Exception as e:
+        print(f"[❌] Error generating audio: {e}")
