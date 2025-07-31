@@ -1,72 +1,58 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os
 from simple_salesforce import Salesforce
 from livekit_utils import send_audio_response
-import re
-from dotenv import load_dotenv
-
-# Load environment variables from .env (for local testing)
-load_dotenv()
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Salesforce connection
-try:
-    sf = Salesforce(
-        username=os.getenv('SF_USERNAME'),
-        password=os.getenv('SF_PASSWORD'),
-        security_token=os.getenv('SF_SECURITY_TOKEN'),
-        domain=os.getenv('SF_DOMAIN')  # 'login' for production or 'test' for sandbox
-    )
-except Exception as e:
-    print("Salesforce connection error:", str(e))
-    sf = None
-
-@app.route('/')
-def index():
-    return "✅ Flask Voice API is running!"
+# Load environment variables (replace with actual values or use dotenv)
+sf = Salesforce(
+    username=os.getenv("SF_USERNAME"),
+    password=os.getenv("SF_PASSWORD"),
+    security_token=os.getenv("SF_SECURITY_TOKEN"),
+    domain='login'
+)
 
 @app.route('/voice', methods=['POST'])
-def voice_handler():
-    if sf is None:
-        return jsonify({'error': 'Salesforce connection not established'}), 500
+def voice_query():
+    try:
+        data = request.get_json()
+        query = data.get("query", "")
+        print("Received query:", query)
 
-    data = request.get_json()
-    query = data.get("query", "").strip()
+        # Extract Opportunity name from query using simple logic
+        if "opportunity" in query.lower():
+            opp_name = query.split("opportunity")[-1].strip().replace("?", "")
+        else:
+            return jsonify({"error": "No Opportunity name found."})
 
-    if not query:
-        return jsonify({'error': 'Query is empty'}), 400
+        # Query Salesforce
+        result = sf.query(f"SELECT StageName FROM Opportunity WHERE Name = '{opp_name}'")
+        records = result.get("records", [])
 
-    if "opportunity" in query.lower():
-        try:
-            # Extract Opportunity Name using regex (e.g., "opportunity Test Oppo")
-            match = re.search(r"opportunity\s+([A-Za-z0-9_\- ]+)", query, re.IGNORECASE)
-            name = match.group(1).strip() if match else None
+        if not records:
+            return jsonify({"error": f"No Opportunity found with name '{opp_name}'"})
 
-            if not name:
-                return jsonify({'error': 'Opportunity name not found in query'}), 400
+        stage = records[0]["StageName"]
+        response_text = f"The stage of opportunity {opp_name} is {stage}."
 
-            # Query Salesforce for Opportunity
-            opp_result = sf.query(f"SELECT Id, Name, StageName FROM Opportunity WHERE Name = '{name}' LIMIT 1")
+        # Convert to voice and return file path
+        audio_path = send_audio_response(response_text)
 
-            if opp_result['records']:
-                stage = opp_result['records'][0]['StageName']
-                response_text = f"The stage of opportunity {name} is {stage}."
-                send_audio_response(response_text)
-                return jsonify({'stage': stage})
-            else:
-                error_msg = f'Opportunity "{name}" not found in Salesforce.'
-                send_audio_response(error_msg)
-                return jsonify({'error': error_msg}), 404
+        return jsonify({
+            "stage": stage,
+            "audio_url": audio_path
+        })
 
-        except Exception as e:
-            error_msg = f'Processing error: {str(e)}'
-            send_audio_response(error_msg)
-            return jsonify({'error': error_msg}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
-    return jsonify({'error': 'Only Opportunity queries are supported'}), 400
+# Serve audio files
+@app.route('/static/audio/<filename>')
+def serve_audio(filename):
+    return send_from_directory('static/audio', filename)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host='0.0.0.0', port=10000)
