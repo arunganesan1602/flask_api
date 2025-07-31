@@ -50,3 +50,6 @@ def handle_voice_query():
 @app.route('/audio/<filename>', methods=['GET'])
 def serve_audio(filename):
     return send_from_directory('static/audio', filename)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
