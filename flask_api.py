@@ -4,10 +4,12 @@ from simple_salesforce import Salesforce
 from livekit_utils import send_audio_response
 import os
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__, static_folder='static')
+CORS(app)
 
 # Salesforce connection
 sf = Salesforce(
